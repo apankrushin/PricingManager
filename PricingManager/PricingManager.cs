@@ -81,7 +81,9 @@ namespace PricingManager
             if (!criterias.Any())
                 return await Task.FromResult(new PricingInfo { Result = StatusEnum.Changed, Message = "Цена изменилась" });
 
-            var criteriaResultsTask = criterias.OrderBy(criteria => criteria.Priority).Select(criteria => new { criteria = criteria, Task = criteria.CheckCriteriaAsync(pricesInfoObject, pricesInfoObject) } ).ToList();
+            var oldPricesInfoObject = GetPricesInfo(order);
+
+            var criteriaResultsTask = criterias.OrderBy(criteria => criteria.Priority).Select(criteria => new { criteria = criteria, Task = criteria.CheckCriteriaAsync(oldPricesInfoObject, pricesInfoObject) } ).ToList();
             await Task.WhenAll(criteriaResultsTask.Select(arg => arg.Task));
 
             var mostImportantCriteria = criteriaResultsTask.FirstOrDefault(arg => arg.Task.Exception==null && arg.Task.Result);
@@ -92,6 +94,11 @@ namespace PricingManager
             await Task.WhenAll(makeDecisionTasks);
 
             return await Task.FromResult(new PricingInfo { Result = StatusEnum.Changed, Message = "Цена изменилась" });
+        }
+
+        private PriceInfoObject GetPricesInfo(IOrder order)
+        {
+            return new PriceInfoObject();
         }
     }
 }
